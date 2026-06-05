@@ -194,11 +194,13 @@ void fibHeapMerge(FibHeap* first, FibHeap* second) {
     if(first->size == 0) {
         first->min = second->min;
         first->size = second->size;
+        free(second->array);
         free(second);
         return;
     }
 
     if(second->size == 0) {
+        free(second->array);
         free(second);
         return;
     }
@@ -208,9 +210,10 @@ void fibHeapMerge(FibHeap* first, FibHeap* second) {
     if(first->min->key > second->min->key) {
         first->min = second->min;
     }
-    
+
     first->size += second->size;
 
+    free(second->array);
     free(second);
 }
 

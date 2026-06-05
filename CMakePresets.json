@@ -1,0 +1,98 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "ASMFIBHEAP_BUILD_APPS": "ON"
+      }
+    },
+    {
+      "name": "mixin-san-address",
+      "hidden": true,
+      "cacheVariables": { "SANITIZER_MODE": "Address" }
+    },
+    {
+      "name": "mixin-san-thread",
+      "hidden": true,
+      "cacheVariables": { "SANITIZER_MODE": "Thread" }
+    },
+    {
+      "name": "mixin-san-memory",
+      "hidden": true,
+      "description": "Requires an instrumented libc++ build (set a toolchain file at the preset that uses this mixin).",
+      "cacheVariables": { "SANITIZER_MODE": "Memory" }
+    },
+    {
+      "name": "mixin-san-undefined",
+      "hidden": true,
+      "cacheVariables": { "SANITIZER_MODE": "Undefined" }
+    },
+    {
+      "name": "mixin-san-none",
+      "hidden": true,
+      "cacheVariables": { "SANITIZER_MODE": "None" }
+    },
+
+    {
+      "name": "dev-debug-asan",
+      "displayName": "Debug + Apps + Address Sanitizer",
+      "description": "Standard development build: Debug symbols + ASan + UBSan",
+      "inherits": ["base", "mixin-san-address"],
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "dev-debug-tsan",
+      "displayName": "Debug + Apps + Thread Sanitizer",
+      "inherits": ["base", "mixin-san-thread"],
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "dev-debug-ubsan",
+      "displayName": "Debug + Apps + Only Undefined Sanitizer",
+      "inherits": ["base", "mixin-san-undefined"],
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "ci-coverage",
+      "displayName": "Debug + Coverage",
+      "description": "Build with GCOV flags. Debug build so branches and inlining stay observable.",
+      "inherits": ["base", "mixin-san-none"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ASMFIBHEAP_ENABLE_COVERAGE": "ON"
+      }
+    },
+    {
+      "name": "ci-relwithdebinfo",
+      "displayName": "RelWithDebInfo",
+      "inherits": ["base", "mixin-san-none"],
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
+    },
+    {
+      "name": "ci-release",
+      "displayName": "Release",
+      "description": "Maximum optimization, no sanitizers",
+      "inherits": ["base", "mixin-san-none"],
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    }
+  ],
+
+  "buildPresets": [
+    { "name": "dev-debug-asan", "configurePreset": "dev-debug-asan" },
+    { "name": "dev-debug-tsan", "configurePreset": "dev-debug-tsan" },
+    { "name": "dev-debug-ubsan", "configurePreset": "dev-debug-ubsan" },
+    { "name": "ci-coverage", "configurePreset": "ci-coverage" },
+    { "name": "ci-relwithdebinfo", "configurePreset": "ci-relwithdebinfo" },
+    { "name": "ci-release", "configurePreset": "ci-release" }
+  ]
+}

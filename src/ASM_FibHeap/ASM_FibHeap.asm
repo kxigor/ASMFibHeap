@@ -797,4 +797,96 @@ ASM_fibHeapСascadingCut:
     ret
 
 
+;-------------------------
+;
+; FUNC: ASM_fibHeapGetSize
+; uint64_t ASM_fibHeapGetSize(const FibHeap* heap)
+;
+; INPUT: rdi = heap
+; OUTPUT: rax = heap->size
+; SPOIL: according to the agreement
+; caller saved registers
+;
+;-------------------------
+ASM_fibHeapGetSize:
+    mov rax, [rdi + fh_size_offset] ; rax = heap->size
+    ret
+
+
+;-------------------------
+;
+; FUNC: ASM_fibHeapMerge
+; void ASM_fibHeapMerge(FibHeap* first, FibHeap* second)
+;
+; Mirrors the C fibHeapMerge: the second heap is spliced into the first
+; and its heap struct is freed. Keeps the smaller of the two minima.
+;
+; INPUT: rdi = first, rsi = second
+; OUTPUT: NONE
+; SPOIL: according to the agreement
+; caller saved registers
+;
+;-------------------------
+ASM_fibHeapMerge:
+    push rbx ; saving registers for recovery
+    push r12 ;
+
+    mov rbx, rdi ; rbx = first
+    mov r12, rsi ; r12 = second
+
+
+    cmp qword [rbx + fh_size_offset], 0     ; if(first->size == 0)
+    jne .if_1_end                           ; {
+        mov rax, [r12 + fh_min_offset]      ; rax = second->min
+        mov [rbx + fh_min_offset], rax      ; first->min = second->min
+        mov rax, [r12 + fh_size_offset]     ; rax = second->size
+        mov [rbx + fh_size_offset], rax     ; first->size = second->size
+        mov rdi, [r12 + fh_array_offset]    ; rdi = second->array
+        call free WRT ..plt                 ; free(second->array)
+        mov rdi, r12                        ; rdi = second
+        call free WRT ..plt                 ; free(second)
+        jmp .exit                           ; return
+    .if_1_end:                              ; }
+
+
+    cmp qword [r12 + fh_size_offset], 0     ; if(second->size == 0)
+    jne .if_2_end                           ; {
+        mov rdi, [r12 + fh_array_offset]    ; rdi = second->array
+        call free WRT ..plt                 ; free(second->array)
+        mov rdi, r12                        ; rdi = second
+        call free WRT ..plt                 ; free(second)
+        jmp .exit                           ; return
+    .if_2_end:                              ; }
+
+
+    mov rdi, [rbx + fh_min_offset]  ; rdi = first->min
+    mov rsi, [r12 + fh_min_offset]  ; rsi = second->min
+    call ASM_fibNodeUnionLists      ; fibNodeUnionLists(first->min, second->min)
+
+
+    mov rax, [rbx + fh_min_offset]      ; rax = first->min
+    mov rcx, [r12 + fh_min_offset]      ; rcx = second->min
+    mov rdx, [rax + fn_key_offset]      ; rdx = first->min->key
+    cmp rdx, [rcx + fn_key_offset]      ; if(first->min->key > second->min->key)
+    jle .if_3_end                       ; {
+        mov [rbx + fh_min_offset], rcx  ; first->min = second->min
+    .if_3_end:                          ; }
+
+
+    mov rax, [r12 + fh_size_offset]     ; rax = second->size
+    add [rbx + fh_size_offset], rax     ; first->size += second->size
+
+
+    mov rdi, [r12 + fh_array_offset]    ; rdi = second->array
+    call free WRT ..plt                 ; free(second->array)
+    mov rdi, r12                        ; rdi = second
+    call free WRT ..plt                 ; free(second)
+
+
+    .exit:
+    pop r12 ; restore spoiled registers
+    pop rbx ;
+    ret     ; return
+
+
 section .data
