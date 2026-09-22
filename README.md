@@ -104,3 +104,7 @@ allocation-failure paths, which cannot be exercised without fault injection.
 
 > Note: this project pins reporting to **gcovr**, not lcov — lcov 2.0
 > misparses the `.gcda` format emitted by recent GCC (14+).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
